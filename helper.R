@@ -4,6 +4,7 @@ library(readr)
 library(fmesher)
 library(inlabru)
 library(futile.logger)
+library(glue)
 
 
 buildModel <- function(date_timeindex,logreturn,startPoints,family,fit_times=1) {
@@ -74,7 +75,7 @@ buildModel <- function(date_timeindex,logreturn,startPoints,family,fit_times=1) 
     
 
 
-parse_result<-function(fit){
+parse_result<-function(fit,family){
     likelihoods=list()
     df <- data.frame()
 

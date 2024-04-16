@@ -119,9 +119,15 @@ for (config_i in 1:configs_nums){
   config<-configs[[config_i]]
   family<-config$family
   startPoints<-config$start_value
-  fit<-buildModel(date_timeindex,logreturn,startPoints,family,fit_times =10) 
-  config$fit<-fit
+  #fit<-buildModel(date_timeindex,logreturn,startPoints,family,fit_times =10)
+  result <- try(buildModel(date_timeindex,logreturn,startPoints,family,fit_times =10) ,silent = TRUE)
+  if (inherits(result, "try-error")) {
+	  futile.logger::flog.info("Error",name = "xx")
+    } else {
+        
+  config$fit<-result
   saveRDS(config, file.path(model_save_path, glue("fit_{config_i}.rds")))
   futile.logger::flog.info(glue("fit_{config_i} is saved"),name = "xx")
+}
 }
 

@@ -1,4 +1,6 @@
 library(INLA) ##
+library(zoo)
+library(dplyr)
 library(rSPDE)
 library(readr)
 library(fmesher)
@@ -73,6 +75,30 @@ buildModel <- function(date_timeindex,logreturn,startPoints,family,fit_times=1) 
     return (result_total)
     }
     
+
+
+# Load necessary libraries
+
+
+# author: Angus
+# Parkinson Volatility Estimator function with rolling window
+parkinson_volatility_rolling <- function(df, window_size) {
+  # Calculate the squared ratio of log high to log low
+  log_hl_ratio_squared <- (log(df$High / df$Low)) ^ 2
+  
+  # Apply rolling function
+  #  align = c("center", "left", "right")
+  rolling_estimator <- rollapply(log_hl_ratio_squared, width = window_size, align="right", FUN = function(x) {
+    n <- length(x)
+    estimator <- (1 / (4 * log(2))) * sum(x) / n
+    # Annualize the volatility (assuming 252 trading days per year)
+    sqrt(estimator * 252)
+  }, by.column = FALSE, fill = NA)
+  
+  # Return the rolling annualized volatility
+  return(rolling_estimator)
+}
+
 
 
 parse_result<-function(fit,family){

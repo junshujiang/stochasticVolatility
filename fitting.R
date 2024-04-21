@@ -16,6 +16,8 @@ date <- data_ori$Date[1:(length(data_ori$Date)-1)]
 date_timeindex<-as.numeric(as.POSIXct(date))
 date_timeindex<-(date_timeindex - min(date_timeindex))/86400
 
+num_start_value=30
+
 families <- list(
   list( 
     model = "rough",
@@ -36,73 +38,33 @@ families <- list(
   list( 
     model = "rs",
     Y="stochvol"
-  ),
-  list( 
-    model = "rs",
-    Y="stochvol.nig"
-  ),
-  list( 
-    model = "rs",
-    Y="stochvol.t"
-  ),
-  list( 
-    model = "rs",
-    Y="stochvolln"
   )
 )
-start_values=list(
-  list( #1
-    prior.std.dev.nominal=2,
-    rspde.order=3,
-    prior.range.nominal=1
-    ),
-  list(# 2
-    prior.std.dev.nominal=2,
-    rspde.order=5,
-    prior.range.nominal=1
-    ),
-  list( #3
-    prior.std.dev.nominal=2,
-    rspde.order=7,
-    prior.range.nominal=1
-    ),
-  list( #4
-    prior.std.dev.nominal=20,
-    rspde.order=3,
-    prior.range.nominal=10
-    ),
-  list( #5
-    prior.std.dev.nominal=20,
-    rspde.order=5,
-    prior.range.nominal=10
-    ),
-  list( #6
-    prior.std.dev.nominal=20,
-    rspde.order=7,
-    prior.range.nominal=10
-    ),
-  list( #7
-    prior.std.dev.nominal=50,
-    rspde.order=3,
-    prior.range.nominal=30
-    ),
-  list( #8
-    prior.std.dev.nominal=50,
-    rspde.order=5,
-    prior.range.nominal=30
-    ),
-  list( #9
-    prior.std.dev.nominal=50,
-    rspde.order=7,
-    prior.range.nominal=30
-    )
-)
-configs_nums=length(families)*length(start_values)
+
+configs_nums=length(families)*num_start_value
 configs=list()
 config_i=1
 
 for (family in families){
-  for (start_value in start_values){
+  for (start_value_i in 1:num_start_value){
+
+    order.start =sample(2:6, 1)
+    range.start =runif(1,min=1,max=300)
+    if (family$model=="rough" & family$Y=="stochvolln" ){
+      std.start = rlnorm(1,-0.49184250617290765, 0.42746915578970635)  
+
+      }
+
+    else if (family$model=="rough" & family$Y=="stochvol.nig" ) {
+      std.start = rlnorm(1,-0.28759736750416326, 0.36233095420105155) 
+    }
+    else if (family$model=="rough" & family$Y=="stochvol.t" ) {
+      std.start = rlnorm(1,-0.3337091281534198, 0.3764506474038931) 
+    }
+    else if (family$model=="rough" & family$Y=="stochvol" ) {
+      std.start = rlnorm(1,-0.426690, 0.4059762) 
+    }
+    start_value=list(rspde.order=order.start,prior.range.nominal=range.start,prior.std.dev.nominal=std.start) 
     configs[[config_i]]<-list(
       family=family,
       start_value=start_value
@@ -115,12 +77,22 @@ model_save_path=file.path(exp_path, 'fits')
 if (!dir.exists(model_save_path)) {
     dir.create(model_save_path, recursive = TRUE)
   }
-for (config_i in 1:configs_nums){
+for (config_i in 1:length(configs)){
+
   config<-configs[[config_i]]
   family<-config$family
   startPoints<-config$start_value
   #fit<-buildModel(date_timeindex,logreturn,startPoints,family,fit_times =10)
-  result <- try(buildModel(date_timeindex,logreturn,startPoints,family,fit_times =10) ,silent = TRUE)
+  result <- try(buildModel(date_timeindex,logreturn,startPoints,family,fit_times =1) ,silent = TRUE)
+  
+  model=family$model
+  family=family$Y
+  rspde.order=startPoints$rspde.order
+  prior.range.nominal=startPoints$prior.range.nominal
+  prior.std.dev.nominal=startPoints$prior.std.dev.nominal
+
+  futile.logger::flog.info(glue("model:{model},Y:{family}"),name = "xx")
+  futile.logger::flog.info(glue("rspde.order:{rspde.order},prior.range.nominal:{prior.range.nominal},prior.std.dev.nominal:{prior.std.dev.nominal}"),name = "xx")
   if (inherits(result, "try-error")) {
 	  futile.logger::flog.info("Error",name = "xx")
     } else {

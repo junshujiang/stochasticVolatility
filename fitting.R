@@ -3,18 +3,34 @@ library(readr)
 library(glue)
 source("helper.R")
 
+
+
+
 max_loger_id<-get_max("Log")
 expName<-"fitting"
 
 exp_path<-glue("Log/{max_loger_id}.{expName}")
 logger=get_logger(exp_path)
 
-data_ori <- as.data.frame(read_csv("tmp/1180_vol.csv"))
-logpt<-log(data_ori$Close)#
-logreturn <-logpt[2:length(logpt)]-logpt[1:(length(logpt)-1)]
-date <- data_ori$Date[1:(length(data_ori$Date)-1)]
+
+if(FALSE){
+futile.logger::flog.info(glue("[DATASET]:SAUDI"), name = "xx")
+  data_ori <- as.data.frame(read_csv("tmp/1180_vol.csv"))
+  logpt<-log(data_ori$Close)#
+  date <- data_ori$Date[1:(length(data_ori$Date)-1)]
+  logreturn <-logpt[2:length(logpt)]-logpt[1:(length(logpt)-1)]
+}else{
+futile.logger::flog.info(glue("[DATASET]:CHINA"), name = "xx")
+  data_ori <- as.data.frame(read_csv("tmp/IF_logreturn.csv"))
+  logreturn <-data_ori$logreturn
+  data_ori$Date<-data_ori[,1]
+  date <- data_ori$Date
+
+}
+
 date_timeindex<-as.numeric(as.POSIXct(date))
 date_timeindex<-(date_timeindex - min(date_timeindex))/86400
+
 
 num_start_value=30
 
@@ -64,6 +80,9 @@ for (family in families){
     else if (family$model=="rough" & family$Y=="stochvol" ) {
       std.start = rlnorm(1,-0.426690, 0.4059762) 
     }
+      else if (family$model=="rs" ) {
+      std.start = rlnorm(1,-1.427234915607385, 0.6217402238591507) 
+      }
     start_value=list(rspde.order=order.start,prior.range.nominal=range.start,prior.std.dev.nominal=std.start) 
     configs[[config_i]]<-list(
       family=family,

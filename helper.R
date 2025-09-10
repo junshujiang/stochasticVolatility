@@ -230,7 +230,26 @@ predict_ls_rolling<-function(logreturn, timeindex, test_start,family="stochvol",
 
 }
 
+load_data<-function(data_path){
 
+ 
+    # Load data from csv file, get return from close price
+    # args:
+    #     data_path: path of csv file
+    #     enddate: end date of data
+    # return: list of logreturn and times
+
+    data_ori <- as.data.frame(read_csv(data_path))
+    logpt<-log(data_ori$close)
+    logreturn <-logpt[2:length(logpt)]-logpt[1:(length(logpt)-1)] ## 1 day = 86400 seconds
+    date <- data_ori$date[1:(length(data_ori$date)-1)]
+    date_timeindex<-as.numeric(as.POSIXct(date)) 
+    date_timeindex <- (date_timeindex - min(date_timeindex))/86400
+    data = data.frame(logreturn = logreturn, times = date_timeindex)
+
+
+    return(data)
+}
 
 
 get_logger <- function(log_path, log_name = "xx", debug = FALSE) {

@@ -245,7 +245,7 @@ load_data<-function(data_path){
     date <- data_ori$date[1:(length(data_ori$date)-1)]
     date_timeindex<-as.numeric(as.POSIXct(date)) 
     date_timeindex <- (date_timeindex - min(date_timeindex))/86400
-    data = data.frame(logreturn = logreturn, times = date_timeindex)
+    data = data.frame(logreturn = logreturn, times = date_timeindex,date=date,close=data_ori$close[2:(length(data_ori$close))])
 
 
     return(data)

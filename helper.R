@@ -277,6 +277,22 @@ get_logger <- function(log_path, log_name = "xx", debug = FALSE) {
   }
 
   return(logger)
+  # # 首先，创建或获取日志器
+  # logger <- get_logger("Log/2.name", log_name = "example_log", debug = TRUE)
+
+  # # 使用日志器记录信息
+  # futile.logger::flog.info("This is an informational message", name = "example_log")
+
+  # # 记录警告
+  # futile.logger::flog.warn("This is a warning message", name = "example_log")
+
+  # # 记录错误
+  # futile.logger::flog.error("This is an error message", name = "example_log")
+
+  # # 记录严重错误
+  # futile.logger::flog.fatal("This is a fatal error message", name = "example_log")
+
+
 }
 
 
@@ -297,17 +313,40 @@ get_max <- function(dirpath) {
 }
 
 
-# # 首先，创建或获取日志器
-# logger <- get_logger("Log/2.name", log_name = "example_log", debug = TRUE)
 
-# # 使用日志器记录信息
-# futile.logger::flog.info("This is an informational message", name = "example_log")
 
-# # 记录警告
-# futile.logger::flog.warn("This is a warning message", name = "example_log")
+simulate_T<-function(dof,delta_S_T){
 
-# # 记录错误
-# futile.logger::flog.error("This is an error message", name = "example_log")
+    # dof: a scalar, degree of freedom estimated by INLA
+    # delta_S_T is a matrix, each element is exp((field+Intercept)/2)
+    # [TODO] check the logic of this function 
+    scale <- as.vector(delta_S_T) / sqrt(dof / (dof - 2))
+    random_return_rate <- matrix(
+        rt(length(delta_S_T), df = dof) * scale,
+        nrow = nrow(delta_S_T),
+        ncol = ncol(delta_S_T)
+    )
+    return(random_return_rate)
+}
 
-# # 记录严重错误
-# futile.logger::flog.fatal("This is a fatal error message", name = "example_log")
+
+expected_payoff_for_European_option <- function(sim_prices, K, type = c("call", "put"), discount_factor = 1) {
+  # Description:
+  #   Calculate the expected payoff of a European call or put option
+  #   based on the simulated prices at the expire data
+  # Parameters:
+  #   sim_prices: simulated prices at the expire data 
+  #   K: strike price
+  #   type: "call" or "put"
+  #   discount_factor: discount factor, default=1 (if you need e^{-rT} outside)
+  
+  type <- match.arg(type)
+  
+  if (type == "call") {
+    payoff <- pmax(sim_prices - K, 0)
+  } else {
+    payoff <- pmax(K - sim_prices, 0)
+  }
+  
+  return(mean(payoff) * discount_factor)
+}

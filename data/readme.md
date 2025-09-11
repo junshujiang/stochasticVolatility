@@ -12,6 +12,7 @@ Range 2017-2024, data source is from JBES paper.
 Option chain price observed at 20240417. `calls_records.csv` and `put_records.csv`
 
 
+`IFtest.csv` is the data between `2024-03-25` are `2024-04-19`.
 
 price of SPY option and its underlying at 9th Sep, 2025.
 
@@ -21,9 +22,10 @@ price of SPY option and its underlying at 9th Sep, 2025.
 Run query SELECT * FROM `option_chain` WHERE `act_symbol` = 'SPY'
 ```
 
+preprocessed data: `SPY_testPeriod.csv` selects one months
 
 
-### SPY
+### SPY underlying assets
 ```MySql
 Run query SELECT * FROM `ohlcv` WHERE `act_symbol`='SPY'
 ```

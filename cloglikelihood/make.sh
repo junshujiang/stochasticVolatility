@@ -16,6 +16,7 @@ fi
 
 # INLA include 路径
 INC="$(Rscript -e 'cat(system.file("include", package="INLA"))')"
+echo "INC: $INC"
 if [ ! -f "$INC/cgeneric.h" ]; then
   echo "ERROR: cgeneric.h not found under: $INC"
   echo "Check INLA installation: install.packages('INLA', repos=c(getOption('repos'), INLA='https://inla.r-inla-download.org/R/stable'))"

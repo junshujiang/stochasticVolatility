@@ -12,6 +12,21 @@
 #define SQR(x_) ((x_)*(x_))
 
 
+
+
+// 放在文件顶部（包含 enum 定义之后）
+static const char* cloglike_cmd_name(inla_cloglike_cmd_tp cmd) {
+    switch (cmd) {
+    case INLA_CLOGLIKE_INITIAL:   return "INITIAL";
+    case INLA_CLOGLIKE_LOG_PRIOR: return "LOG_PRIOR";
+    case INLA_CLOGLIKE_LOGLIKE:   return "LOGLIKE";
+    case INLA_CLOGLIKE_CDF:       return "CDF";
+    case INLA_CLOGLIKE_QUIT:      return "QUIT";
+    default:                      return "UNKNOWN";
+    }
+}
+
+
 static int write_string_to_file(const char *path, const char *s)
 {
     FILE *fp = fopen(path, "a");
@@ -188,34 +203,13 @@ double *inla_cloglike_gaussian(inla_cloglike_cmd_tp cmd, double *theta,
 
 	return ret;
 }
-/* ====== PC prior for t dof: log-prior on ldof = log(nu-2) ====== */
-/* INLA 距离函数：d(nu)，由包里提供（和你贴的 priorfunc_pc_dof 同名依赖） */
-extern double inla_pcp_dof_d(double dof);
+
 
 /* 映射与导数：nu = 2 + exp(ldof) */
 static inline double map_dof_forward_from_ldof(double ldof)     { return 2.0 + exp(ldof); }
 static inline double map_dof_dforward_from_ldof(double ldof)    { return exp(ldof); }
 
-/* log π(ldof | u, α)  —— 复刻你贴的 priorfunc_pc_dof 思路 */
-static double pc_logprior_ldof(double ldof, double u, double alpha)
-{
-    /* 计算 lambda = -log(alpha)/d(u) */
-    const double lambda = -log(alpha) / inla_pcp_dof_d(u);
 
-    /* 数值近似 d'(nu)（五点差分，和你贴的一致） */
-    double nu  = map_dof_forward_from_ldof(ldof);
-    double step = sqrt(nu) * 1e-3;
-    if (nu - 2.0*step < 2.003) step = (nu - 2.003)/2.0;
-
-    const double wf[5] = { 1.0/12.0, -2.0/3.0, 0.0, 2.0/3.0, -1.0/12.0 };
-    double nus[5], f[5];
-    nus[0]=nu-2.0*step; nus[1]=nu-step; nus[2]=nu; nus[3]=nu+step; nus[4]=nu+2.0*step;
-    for (int k=0;k<5;k++) f[k] = inla_pcp_dof_d(nus[k]);
-    const double dprime = (wf[0]*f[0] + wf[1]*f[1] + wf[2]*f[2] + wf[3]*f[3] + wf[4]*f[4]) / step;
-
-    /* log π(ldof) = log λ - λ d(nu) + log|d'(nu)| + log|d nu/d ldof| */
-    return log(lambda) - lambda * f[2] + log(fabs(dprime)) + log(map_dof_dforward_from_ldof(ldof));
-}
 
 
 /* 学生t：stochvol 的 cloglike 版本
@@ -233,15 +227,12 @@ double *inla_cloglike_stochvol_t(inla_cloglike_cmd_tp cmd, double *theta,
 		ldof = theta[0];
 		nu   = 2.0 + exp(ldof);                /* 确保 > 2 */
 		sd   = sqrt(nu / (nu - 2.0));          /* 标准 t 的标准差 */
-		char bufhere[64];
-		snprintf(bufhere, sizeof bufhere, "check nu for every call of ldof here %.17g", nu);
-		write_string_to_file("log.txt", bufhere);
 	}
-	else{
-		char bufhere[64];
-		snprintf(bufhere, sizeof bufhere, "check nu  %.17g", -1);
-		write_string_to_file("log.txt", bufhere);
-	}
+
+
+	char bufhere[64];
+	snprintf(bufhere, sizeof bufhere, "cmd=%s(%d)", cloglike_cmd_name(cmd), (int)cmd);
+	write_string_to_file("log.txt", bufhere);
 
 
 

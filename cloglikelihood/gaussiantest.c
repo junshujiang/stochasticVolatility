@@ -28,6 +28,7 @@ double *inla_cloglike_gaussian(inla_cloglike_cmd_tp cmd, double *theta,
 #define LOG_NORMC_GAUSSIAN (-0.91893853320467274178032973640560)	/* -1/2 * log(2*pi) */
 #define CDF(x_) (0.5 * (1.0 + erf(M_SQRT1_2 * (x_))))
 
+
 	double *ret = NULL, prec, lprec;
 
 	if (theta) {
@@ -229,10 +230,21 @@ double *inla_cloglike_stochvol_t(inla_cloglike_cmd_tp cmd, double *theta,
 	/* 读超参数：nu */
 	double ldof = NAN, nu = NAN, sd = NAN;
 	if (theta) {
-	ldof = theta[0];
-	nu   = 2.0 + exp(ldof);                /* 确保 > 2 */
-	sd   = sqrt(nu / (nu - 2.0));          /* 标准 t 的标准差 */
+		ldof = theta[0];
+		nu   = 2.0 + exp(ldof);                /* 确保 > 2 */
+		sd   = sqrt(nu / (nu - 2.0));          /* 标准 t 的标准差 */
+		char bufhere[64];
+		snprintf(bufhere, sizeof bufhere, "check nu for every call of ldof here %.17g", nu);
+		write_string_to_file("log.txt", bufhere);
 	}
+	else{
+		char bufhere[64];
+		snprintf(bufhere, sizeof bufhere, "check nu  %.17g", -1);
+		write_string_to_file("log.txt", bufhere);
+	}
+
+
+
 
 	switch (cmd) {
 	case INLA_CLOGLIKE_INITIAL: {
@@ -251,7 +263,7 @@ double *inla_cloglike_stochvol_t(inla_cloglike_cmd_tp cmd, double *theta,
 		snprintf(buf, sizeof buf, "theta prior %.17g", theta[0]);
 		write_string_to_file("log.txt", buf);
 		ret[0] = pc_logprior_ldof(theta[0], u, alpha);  /* theta[0] = ldof = log(nu-2) */
-		snprintf(buf, sizeof buf, "theta prior end %.17g", theta[0]);
+		snprintf(buf, sizeof buf, "theta after %.17g", theta[0]);
 		write_string_to_file("log.txt", buf);
 	} break;
 
